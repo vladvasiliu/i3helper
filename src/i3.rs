@@ -51,7 +51,7 @@ impl I3Manager {
 
     pub async fn sender(&mut self) -> Result<()> {
         while let Some(event) = self.event_rx.recv().await {
-            self.handle_event(event).await;
+            self.handle_event(event).await?;
         }
         Ok(())
     }
