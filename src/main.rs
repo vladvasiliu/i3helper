@@ -3,7 +3,7 @@ mod i3;
 use crate::i3::{focus_listener, I3Manager};
 use log::error;
 
-#[tokio::main(basic_scheduler)]
+#[tokio::main]
 async fn main() {
     setup_logger(log::LevelFilter::Info).unwrap();
     let mut i3_manager = I3Manager::new().await.unwrap();
