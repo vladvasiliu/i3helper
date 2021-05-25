@@ -2,12 +2,12 @@ use futures::stream::StreamExt;
 use log::{debug, info};
 use std::error::Error as StdError;
 use std::fmt;
-use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::sync::mpsc::{channel, error::SendError, Receiver, Sender};
 use tokio_i3ipc::event::{Event as I3Event, Subscribe, WindowChange};
 use tokio_i3ipc::reply::Node;
 use tokio_i3ipc::{msg, reply, MsgResponse, I3};
 
-pub async fn focus_listener(mut event_tx: Sender<EventType>) -> Result<()> {
+pub async fn focus_listener(event_tx: Sender<EventType>) -> Result<()> {
     let mut i3 = I3::connect().await?;
     i3.subscribe([Subscribe::Window]).await?;
 
@@ -49,7 +49,7 @@ impl I3Manager {
         })
     }
 
-    pub fn get_sender(&self) -> Sender<EventType> {
+    pub fn get_i3_event_tx(&self) -> Sender<EventType> {
         self.i3_event_tx.clone()
     }
 
@@ -106,8 +106,8 @@ impl From<tokio::io::Error> for Error {
         unimplemented!()
     }
 }
-impl From<tokio::sync::mpsc::error::SendError<EventType>> for Error {
-    fn from(_: tokio::sync::mpsc::error::SendError<EventType>) -> Self {
+impl From<SendError<EventType>> for Error {
+    fn from(_: SendError<EventType>) -> Self {
         unimplemented!()
     }
 }
