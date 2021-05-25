@@ -31,8 +31,8 @@ pub enum EventType {
 pub struct I3Manager {
     prev_window_id: Option<usize>,
     curr_window_id: Option<usize>,
-    event_rx: Receiver<EventType>,
-    pub event_tx: Sender<EventType>,
+    i3_event_rx: Receiver<EventType>,
+    i3_event_tx: Sender<EventType>,
     i3: I3,
 }
 
@@ -43,14 +43,18 @@ impl I3Manager {
         Ok(Self {
             prev_window_id: None,
             curr_window_id: None,
-            event_rx,
-            event_tx,
+            i3_event_rx: event_rx,
+            i3_event_tx: event_tx,
             i3,
         })
     }
 
-    pub async fn sender(&mut self) -> Result<()> {
-        while let Some(event) = self.event_rx.recv().await {
+    pub fn get_sender(&self) -> Sender<EventType> {
+        self.i3_event_tx.clone()
+    }
+
+    pub async fn i3_cmd_sender(&mut self) -> Result<()> {
+        while let Some(event) = self.i3_event_rx.recv().await {
             self.handle_event(event).await?;
         }
         Ok(())

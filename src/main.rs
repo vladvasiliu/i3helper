@@ -9,8 +9,8 @@ async fn main() {
     let mut i3_manager = I3Manager::new().await.unwrap();
 
     let mut join_handles = vec![];
-    let focus_listener_tx = i3_manager.event_tx.clone();
-    join_handles.push(tokio::spawn(async move { i3_manager.sender().await }));
+    let focus_listener_tx = i3_manager.get_sender();
+    join_handles.push(tokio::spawn(async move { i3_manager.i3_cmd_sender().await }));
     join_handles.push(tokio::spawn(async {
         focus_listener(focus_listener_tx).await
     }));
