@@ -5,7 +5,7 @@ use log::error;
 
 #[tokio::main]
 async fn main() {
-    setup_logger(log::LevelFilter::Info).unwrap();
+    setup_logger(log::LevelFilter::Debug).unwrap();
     let mut i3_manager = I3Manager::new().await.unwrap();
 
     let mut join_handles = vec![];

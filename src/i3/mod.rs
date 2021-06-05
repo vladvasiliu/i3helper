@@ -1,11 +1,11 @@
 use futures::stream::StreamExt;
-use log::{debug, info};
+use log::warn;
 use std::error::Error as StdError;
 use std::fmt;
 use tokio::sync::mpsc::{channel, error::SendError, Receiver, Sender};
 use tokio_i3ipc::event::{Event as I3Event, Subscribe, WindowChange};
 use tokio_i3ipc::reply::Node;
-use tokio_i3ipc::{msg, reply, MsgResponse, I3};
+use tokio_i3ipc::I3;
 
 pub async fn focus_listener(event_tx: Sender<EventType>) -> Result<()> {
     let mut i3 = I3::connect().await?;
@@ -82,10 +82,15 @@ impl I3Manager {
         Ok(())
     }
 
-    async fn run_command<P: AsRef<str>>(&mut self, payload: P) -> Result<()> {
-        self.i3.send_msg_body(msg::Msg::RunCommand, payload).await?;
-        let resp: MsgResponse<Vec<reply::Success>> = self.i3.read_msg().await?;
-        debug!("{:#?}", resp);
+    async fn run_command<P: AsRef<str> + fmt::Display>(&mut self, payload: P) -> Result<()> {
+        let resp = self.i3.run_command(&payload).await?;
+        let resp: Vec<&String> = resp.iter().filter_map(|x| x.error.as_ref()).collect();
+        if !resp.is_empty() {
+            warn!(
+                "I3 Command failed. Command: {} - Response: {:?}",
+                &payload, resp
+            );
+        }
         Ok(())
     }
 }
