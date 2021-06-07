@@ -1,7 +1,6 @@
 mod i3;
 
 use crate::i3::I3Manager;
-use log::error;
 
 #[tokio::main]
 async fn main() {
