@@ -22,6 +22,7 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-97b3619f05c6b87e/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libc-07ae271024bebfb9/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-e42269cde664bfb7/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libc-c9e4c0cc218863a6/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
