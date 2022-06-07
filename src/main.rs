@@ -1,12 +1,15 @@
 mod i3;
 
 use crate::i3::I3Manager;
+use color_eyre::Result;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
+    color_eyre::install()?;
     setup_logger(log::LevelFilter::Debug).unwrap();
     let mut i3_manager = I3Manager::new().await.unwrap();
-    i3_manager.run().await;
+    i3_manager.run().await?;
+    Ok(())
 }
 
 fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {

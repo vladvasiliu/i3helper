@@ -2,24 +2,26 @@
 name = "i3helper"
 version = "0.1.0"
 authors = ["Vlad Vasiliu <vladvasiliun@yahoo.fr>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+color-eyre = "0.6"
 fern = "0.6"
-futures = "0.3.15"
+futures = "0.3"
 log = "0.4.14"
-tokio = { version = "1.6", features = ["macros", "rt-multi-thread", "signal", "sync"] }
-tokio-i3ipc = "0.12"
-tokio-stream = "0.1.6"
-tokio-util = "0.6.5"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "sync"] }
+tokio-i3ipc = "0.14"
+tokio-stream = "0.1"
+tokio-util = "0.7"
 
 [profile.release]
 lto = true
 incremental = true
 codegen-units = 1
 panic = "abort"
+strip = "true"
 
-#[profile.dev.package.backtrace]
-#opt-level = 3
+[profile.dev.package.backtrace]
+opt-level = 3

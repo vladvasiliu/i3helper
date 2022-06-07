@@ -1,5 +1,5 @@
+use color_eyre::Result;
 use log::{error, info, warn};
-use std::error::Error as StdError;
 use std::fmt;
 use tokio::signal::ctrl_c;
 use tokio::signal::unix::{signal, SignalKind};
@@ -140,22 +140,3 @@ impl I3Manager {
         Ok(())
     }
 }
-
-#[derive(Debug)]
-pub enum Error {}
-
-impl StdError for Error {}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        unimplemented!()
-    }
-}
-
-impl From<tokio::io::Error> for Error {
-    fn from(_: tokio::io::Error) -> Self {
-        unimplemented!()
-    }
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
