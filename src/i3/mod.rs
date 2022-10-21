@@ -33,9 +33,9 @@ impl WindowStack {
         self.push(win_id)
     }
 
-    pub fn get_active(&self) -> Option<&usize> {
-        self.0.last()
-    }
+    // pub fn get_active(&self) -> Option<&usize> {
+    //     self.0.last()
+    // }
 
     pub fn get_previous(&self) -> Option<&usize> {
         let len = self.0.len();
@@ -113,7 +113,7 @@ impl I3Manager {
         // Can't pattern match on a box in stable rust (june 2021)
         // https://doc.rust-lang.org/stable/unstable-book/language-features/box-patterns.html
         if let I3Event::Window(event) = event {
-            debug!("Got i3 event: {:?}", event);
+            debug!("Got i3 event: {:#?}", event);
             match *event {
                 WindowData {
                     change: WindowChange::Focus,
