@@ -1,4 +1,4 @@
-use color_eyre::Result;
+use anyhow::Result;
 use log::{debug, error, info, warn};
 use std::fmt;
 use tokio::signal::ctrl_c;

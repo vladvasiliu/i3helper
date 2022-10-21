@@ -7,16 +7,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-color-eyre = "0.6"
-#fern = "0.6"
+anyhow = "1"
 futures = "0.3"
 log = "0.4"
 simple_logger = "3"
 systemd-journal-logger = "0.5"
 tokio = { version = "1", features = ["macros", "rt", "signal", "sync"] }
 tokio-i3ipc = "0.15.0"
-tokio-stream = "0.1"
-tokio-util = "0.7"
 
 [profile.release]
 lto = true
