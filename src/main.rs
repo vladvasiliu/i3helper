@@ -3,7 +3,7 @@ mod i3;
 use crate::i3::I3Manager;
 use color_eyre::Result;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     color_eyre::install()?;
     setup_logger(log::LevelFilter::Debug).unwrap();
