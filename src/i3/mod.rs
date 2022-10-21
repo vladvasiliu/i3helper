@@ -1,9 +1,10 @@
 use color_eyre::Result;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use std::fmt;
 use tokio::signal::ctrl_c;
 use tokio::signal::unix::{signal, SignalKind};
-use tokio_i3ipc::event::{Event as I3Event, Subscribe, WindowChange};
+use tokio_i3ipc::event::{Event as I3Event, Subscribe, WindowChange, WindowData};
+use tokio_i3ipc::reply::{Node, WindowType};
 use tokio_i3ipc::I3;
 
 struct WindowStack(Vec<usize>);
@@ -99,6 +100,7 @@ impl I3Manager {
                     break;
                 }
                 _ = usr1_stream.recv() => {
+                    debug!("Received USR1");
                     self.switch_to_previous().await?;
                 }
             }
@@ -111,9 +113,25 @@ impl I3Manager {
         // Can't pattern match on a box in stable rust (june 2021)
         // https://doc.rust-lang.org/stable/unstable-book/language-features/box-patterns.html
         if let I3Event::Window(event) = event {
-            match event.change {
-                WindowChange::Focus => self.window_stack.set_active(event.container.id),
-                WindowChange::Close => self.window_stack.delete(event.container.id),
+            debug!("Got i3 event: {:?}", event);
+            match *event {
+                WindowData {
+                    change: WindowChange::Focus,
+                    container:
+                        Node {
+                            window_type: Some(WindowType::Normal),
+                            focused: true,
+                            ..
+                        },
+                } => self.window_stack.set_active(event.container.id),
+                WindowData {
+                    change: WindowChange::Close,
+                    container:
+                        Node {
+                            window_type: Some(WindowType::Normal),
+                            ..
+                        },
+                } => self.window_stack.delete(event.container.id),
                 _ => (),
             }
         }
