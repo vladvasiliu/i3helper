@@ -7,7 +7,7 @@ Its focus is to be small, fast and configurable.
 
 ## Status
 
-The project is in a prototype stage. For now, it only follows focus events and sets the title to bold accordingly.
+The project is in a prototype stage. For now, it only follows focus events and allows to switch to the previous focused window by listening for USR1.
 
 
 ## How it works
