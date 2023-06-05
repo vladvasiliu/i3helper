@@ -1,0 +1,10 @@
+[Unit]
+Description=Augment i3 actions
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/i3helper
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

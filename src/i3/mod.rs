@@ -1,6 +1,7 @@
 use anyhow::Result;
 use log::{debug, error, info, warn};
 use std::fmt;
+use tokio::net::UnixListener;
 use tokio::signal::ctrl_c;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio_i3ipc::event::{Event as I3Event, Subscribe, WindowChange, WindowData};
@@ -50,14 +51,16 @@ impl WindowStack {
 pub struct I3Manager {
     i3: I3,
     window_stack: WindowStack,
+    unix_sock: UnixListener,
 }
 
 impl I3Manager {
-    pub async fn new() -> Result<I3Manager> {
+    pub async fn new(unix_sock: UnixListener) -> Result<I3Manager> {
         let i3 = I3::connect().await?;
         Ok(Self {
             i3,
             window_stack: WindowStack::new(),
+            unix_sock,
         })
     }
 
@@ -66,7 +69,7 @@ impl I3Manager {
     Implementation notes:
 
     `i3-ipc` doesn't handle concurrency well as the message exchanges seem to be sequential.
-    There's a pathologic when events are sent in between commands and their answers, eg:
+    There's a pathologic case when events are sent in between commands and their answers, eg:
     1. send focus command
     2. i3 updates focus and sends a `Window` type event
     3. i3 sends the response to the focus command
@@ -110,7 +113,7 @@ impl I3Manager {
     }
 
     async fn handle_i3_event(&mut self, event: I3Event) -> Result<()> {
-        // Can't pattern match on a box in stable rust (june 2021)
+        // Can't pattern-match on a box in stable rust (june 2021)
         // https://doc.rust-lang.org/stable/unstable-book/language-features/box-patterns.html
         if let I3Event::Window(event) = event {
             debug!("Got i3 event: {:#?}", event);
