@@ -120,12 +120,7 @@ impl I3Manager {
             match *event {
                 WindowData {
                     change: WindowChange::Focus,
-                    container:
-                        Node {
-                            window_type: Some(WindowType::Normal),
-                            focused: true,
-                            ..
-                        },
+                    container: Node { focused: true, .. },
                 } => self.window_stack.set_active(event.container.id),
                 WindowData {
                     change: WindowChange::Close,
