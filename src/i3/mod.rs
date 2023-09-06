@@ -1,12 +1,9 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
+use i3_ipc::event::{Event as I3Event, Subscribe, WindowChange, WindowData};
+use i3_ipc::reply::{Node, WindowType};
+use i3_ipc::{I3Stream, I3};
 use log::{debug, error, info, warn};
 use std::fmt;
-use tokio::net::UnixListener;
-use tokio::signal::ctrl_c;
-use tokio::signal::unix::{signal, SignalKind};
-use tokio_i3ipc::event::{Event as I3Event, Subscribe, WindowChange, WindowData};
-use tokio_i3ipc::reply::{Node, WindowType};
-use tokio_i3ipc::I3;
 
 struct WindowStack(Vec<usize>);
 
@@ -49,18 +46,24 @@ impl WindowStack {
 }
 
 pub struct I3Manager {
-    i3: I3,
+    /// Used for receiving command responses
+    i3: I3Stream,
     window_stack: WindowStack,
-    unix_sock: UnixListener,
+    // unix_sock: UnixListener,
 }
 
 impl I3Manager {
-    pub async fn new(unix_sock: UnixListener) -> Result<I3Manager> {
-        let i3 = I3::connect().await?;
+    pub fn new() -> Result<I3Manager> {
+        let mut i3 = I3Stream::conn_sub(&[])?;
+        info!(
+            "Connected to i3 version {}",
+            i3.get_version()
+                .context("Failed to get i3 version")?
+                .human_readable
+        );
         Ok(Self {
             i3,
             window_stack: WindowStack::new(),
-            unix_sock,
         })
     }
 
@@ -68,8 +71,8 @@ impl I3Manager {
 
     Implementation notes:
 
-    `i3-ipc` doesn't handle concurrency well as the message exchanges seem to be sequential.
-    There's a pathologic case when events are sent in between commands and their answers, eg:
+    `i3-ipc` doesn't handle concurrency well, as the message exchanges seem to be sequential.
+    There's a pathologic case when events are sent in between commands and their answers, e.g.:
     1. send focus command
     2. i3 updates focus and sends a `Window` type event
     3. i3 sends the response to the focus command
@@ -85,34 +88,33 @@ impl I3Manager {
         before sending new messages.
      */
     pub async fn run(&mut self) -> Result<()> {
-        let mut i3_event_connection = I3::connect().await?;
-        i3_event_connection.subscribe([Subscribe::Window]).await?;
+        let mut i3_event_channel = I3Stream::conn_sub(&[Subscribe::Window])?;
 
-        let mut usr1_stream = signal(SignalKind::user_defined1())?;
+        // let mut usr1_stream = signal(SignalKind::user_defined1())?;
 
         loop {
-            tokio::select! {
-                i3_event = i3_event_connection.read_event() => {
-                    match i3_event {
-                        Ok(i3_event) => self.handle_i3_event(i3_event).await?,
-                        Err(err) => error!("Got i3 error: {:#?}", err)
-                    }
-                }
-                _ = ctrl_c() => {
-                    info!("Received ^C, shutting down");
-                    break;
-                }
-                _ = usr1_stream.recv() => {
-                    debug!("Received USR1");
-                    self.switch_to_previous().await?;
-                }
-            }
+            //     tokio::select! {
+            //         i3_event = i3_event_connection.read_event() => {
+            //             match i3_event {
+            //                 Ok(i3_event) => self.handle_i3_event(i3_event).await?,
+            //                 Err(err) => error!("Got i3 error: {:#?}", err)
+            //             }
+            //         }
+            //         _ = ctrl_c() => {
+            //             info!("Received ^C, shutting down");
+            //             break;
+            //         }
+            //         _ = usr1_stream.recv() => {
+            //             debug!("Received USR1");
+            //             self.switch_to_previous().await?;
+            //         }
+            //     }
         }
 
         Ok(())
     }
 
-    async fn handle_i3_event(&mut self, event: I3Event) -> Result<()> {
+    fn handle_i3_event(&mut self, event: I3Event) -> Result<()> {
         // Can't pattern-match on a box in stable rust (june 2021)
         // https://doc.rust-lang.org/stable/unstable-book/language-features/box-patterns.html
         if let I3Event::Window(event) = event {
@@ -120,7 +122,18 @@ impl I3Manager {
             match *event {
                 WindowData {
                     change: WindowChange::Focus,
-                    container: Node { focused: true, .. },
+                    container:
+                        Node {
+                            focused: true,
+                            window_type:
+                                Some(
+                                    WindowType::Dialog
+                                    | WindowType::Normal
+                                    | WindowType::Utility
+                                    | WindowType::Unknown,
+                                ),
+                            ..
+                        },
                 } => self.window_stack.set_active(event.container.id),
                 WindowData {
                     change: WindowChange::Close,
@@ -136,16 +149,16 @@ impl I3Manager {
         Ok(())
     }
 
-    async fn switch_to_previous(&mut self) -> Result<()> {
+    fn switch_to_previous(&mut self) -> Result<()> {
         if let Some(prev_window_id) = self.window_stack.get_previous() {
             let payload = format!("[con_id={}] focus", prev_window_id);
-            self.run_command(payload).await?;
+            self.run_command(payload)?;
         }
         Ok(())
     }
 
-    async fn run_command<P: AsRef<str> + fmt::Display>(&mut self, payload: P) -> Result<()> {
-        let resp = self.i3.run_command(&payload).await?;
+    fn run_command<P: AsRef<str> + fmt::Display>(&mut self, payload: P) -> Result<()> {
+        let resp = self.i3.run_command(&payload)?;
         let resp: Vec<&String> = resp.iter().filter_map(|x| x.error.as_ref()).collect();
         if !resp.is_empty() {
             warn!(
